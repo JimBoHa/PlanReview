@@ -1,0 +1,3 @@
+[console_scripts]
+planreview-app = planreview.desktop:main
+planreview-serve = planreview.main:main

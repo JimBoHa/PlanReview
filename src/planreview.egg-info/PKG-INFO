@@ -1,0 +1,101 @@
+Metadata-Version: 2.4
+Name: planreview
+Version: 0.1.0
+Summary: Local-first construction plan review and code compliance application.
+Author: Codex
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi<1.0,>=0.120
+Requires-Dist: jinja2<4.0,>=3.1
+Requires-Dist: openpyxl<4.0,>=3.1
+Requires-Dist: pillow<12.0,>=11.0
+Requires-Dist: pydantic-settings<3.0,>=2.11
+Requires-Dist: pymupdf<2.0,>=1.26
+Requires-Dist: python-multipart<1.0,>=0.0.20
+Requires-Dist: sqlmodel<1.0,>=0.0.24
+Requires-Dist: uvicorn<1.0,>=0.38
+Provides-Extra: dev
+Requires-Dist: httpx<1.0,>=0.28; extra == "dev"
+Requires-Dist: pyinstaller<7.0,>=6.16; extra == "dev"
+Requires-Dist: pytest<9.0,>=8.4; extra == "dev"
+Requires-Dist: pytest-cov<8.0,>=7.0; extra == "dev"
+Requires-Dist: ruff<1.0,>=0.14; extra == "dev"
+Provides-Extra: ocr
+Requires-Dist: ocrmac>=1.0.0; extra == "ocr"
+
+# PlanReview
+
+PlanReview is a local-first macOS application for reviewing drawings and specifications against a selected compliance baseline. It runs entirely on the user's machine, exposes a browser-based interface, stores project data in SQLite, and exports:
+
+- an Excel comment log,
+- a marked-up drawing set,
+- a marked-up specification set.
+
+## Scope of this build
+
+This repository ships a usable local review workflow with:
+
+- project intake for address, contract date, authority questions, and uploads,
+- a searchable standards catalog with version-aware suggestions,
+- a local PDF processing pipeline that extracts text, detects selected rule-pack discrepancies, captures thumbnails, and writes findings to SQLite,
+- live review status with estimated completion time,
+- export of Excel and marked-up PDFs,
+- macOS packaging, signing, and notarization scripts.
+
+The standards catalog stores metadata and version history. Automated rule coverage is strongest for the bundled public-domain and model-code rule packs and is designed to be extended. Many commercial standards are copyright-restricted, so the application stores citations and version metadata without bundling full copyrighted texts.
+
+## Quick start
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+planreview-serve
+```
+
+The app serves at `http://127.0.0.1:8765`.
+
+To launch it like a desktop app:
+
+```bash
+planreview-app
+```
+
+## Test
+
+```bash
+pytest
+```
+
+## Build macOS app and DMG
+
+```bash
+scripts/build_app.sh
+scripts/build_dmg.sh
+```
+
+## Notarize
+
+```bash
+scripts/notarize_dmg.sh release/PlanReview.dmg
+```
+
+## Standards catalog
+
+The seeded catalog lives in `src/planreview/data/standards_seed.json`. Each entry includes:
+
+- issuing body,
+- family,
+- edition/version string,
+- publication and effective dates,
+- status,
+- citation metadata,
+- suggestion tags used by the jurisdiction questionnaire.
+
+## Architecture
+
+- FastAPI + Jinja templates for the local web UI
+- SQLModel + SQLite for storage
+- PyMuPDF for PDF extraction, thumbnail capture, and markup
+- Background worker for review jobs
+- OpenPyXL for Excel export

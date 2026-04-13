@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "planreview"
+version = "0.1.0"
+description = "Local-first construction plan review and code compliance application."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Codex" }]
+dependencies = [
+  "fastapi>=0.120,<1.0",
+  "jinja2>=3.1,<4.0",
+  "openpyxl>=3.1,<4.0",
+  "pillow>=11.0,<12.0",
+  "pydantic-settings>=2.11,<3.0",
+  "pymupdf>=1.26,<2.0",
+  "python-multipart>=0.0.20,<1.0",
+  "sqlmodel>=0.0.24,<1.0",
+  "uvicorn>=0.38,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1.0",
+  "pyinstaller>=6.16,<7.0",
+  "pytest>=8.4,<9.0",
+  "pytest-cov>=7.0,<8.0",
+  "ruff>=0.14,<1.0",
+]
+ocr = [
+  "ocrmac>=1.0.0"
+]
+
+[project.scripts]
+planreview-serve = "planreview.main:main"
+planreview-app = "planreview.desktop:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+planreview = ["templates/*.html", "static/*", "data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
