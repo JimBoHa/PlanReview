@@ -19,7 +19,6 @@ pyinstaller \
   --osx-bundle-identifier com.PlanReviewer.installer \
   --add-data "src/planreview/templates:planreview/templates" \
   --add-data "src/planreview/static:planreview/static" \
-  --add-data "src/planreview/data:planreview/data" \
   src/planreview/desktop.py
 
 APP_PATH="$ROOT_DIR/dist/PlanReview.app"
