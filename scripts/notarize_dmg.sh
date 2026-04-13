@@ -29,5 +29,6 @@ xcrun notarytool submit \
   --wait
 
 xcrun stapler staple "$APP_PATH"
+xcrun stapler staple "$DMG_PATH"
 echo "Notarization completed for $DMG_PATH"
 echo "Team ID: $TEAM_ID"
