@@ -33,6 +33,10 @@ def test_end_to_end_review_and_export(app_client, tmp_path: Path) -> None:
                 "450A breaker serving feeder\n"
                 "Provide 250 mcm copper feeder\n"
                 "Drain slope 2 in pipe slope 1/16 in/ft\n"
+                "Accessible door clear width 30 in\n"
+                "Accessible ramp slope 1:10\n"
+                "Main corridor width 36 in\n"
+                "Guard height 36 in\n"
                 "Grounding to follow FAA-STD-019f, Chg 2\n"
             )
         ],
@@ -59,6 +63,7 @@ def test_end_to_end_review_and_export(app_client, tmp_path: Path) -> None:
                 {"standard_id": "ipc-2021", "source": "user", "user_state": "selected"},
                 {"standard_id": "faa-std-019f-chg3", "source": "user", "user_state": "selected"},
                 {"standard_id": "ibc-2021", "source": "user", "user_state": "selected"},
+                {"standard_id": "ada-2010", "source": "user", "user_state": "selected"},
             ]
         },
     )
@@ -80,11 +85,15 @@ def test_end_to_end_review_and_export(app_client, tmp_path: Path) -> None:
     assert job_payload is not None
     assert job_payload["job"]["status"] == "completed"
     discrepancies = job_payload["discrepancies"]
-    assert len(discrepancies) >= 4
+    assert len(discrepancies) >= 8
     assert any("FAA-STD-019f, Chg 2" in item["description"] for item in discrepancies)
     assert any("undersized" in item["description"] for item in discrepancies)
     assert any("minimum drainage slope" in item["citation"] for item in discrepancies)
     assert any("IBC 2018" in item["description"] for item in discrepancies)
+    assert any("32-inch minimum" in item["description"] for item in discrepancies)
+    assert any("1:12 maximum" in item["description"] for item in discrepancies)
+    assert any("44-inch minimum" in item["description"] for item in discrepancies)
+    assert any("42-inch minimum" in item["description"] for item in discrepancies)
 
     exports_response = client.get(f"/api/projects/{project_id}/exports")
     assert exports_response.status_code == 200

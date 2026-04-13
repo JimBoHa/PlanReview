@@ -1,18 +1,13 @@
 from __future__ import annotations
 
-import json
 from datetime import date
-from pathlib import Path
 
 from sqlmodel import select
 
 from planreview.database import session_scope
 from planreview.models import Project, Standard
 from planreview.schemas import SuggestedStandard
-
-
-def _package_seed_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "data" / "standards_seed.json"
+from planreview.services.catalog_seed import build_seed_catalog
 
 
 def ensure_catalog_seeded() -> None:
@@ -20,16 +15,7 @@ def ensure_catalog_seeded() -> None:
         existing = session.exec(select(Standard.id)).first()
         if existing:
             return
-        payload = json.loads(_package_seed_path().read_text())
-        for item in payload:
-            item["publication_date"] = (
-                date.fromisoformat(item["publication_date"])
-                if item.get("publication_date")
-                else None
-            )
-            item["effective_date"] = (
-                date.fromisoformat(item["effective_date"]) if item.get("effective_date") else None
-            )
+        for item in build_seed_catalog():
             session.add(Standard(**item))
 
 
@@ -37,11 +23,21 @@ def search_catalog(q: str = "", limit: int = 50) -> list[Standard]:
     query = q.strip().lower()
     with session_scope() as session:
         standards = session.exec(select(Standard)).all()
+    ranked = sorted(
+        standards,
+        key=lambda item: (
+            item.issuer,
+            item.family,
+            item.code,
+            item.effective_date or date.min,
+        ),
+        reverse=True,
+    )
     if not query:
-        return list(standards)[:limit]
+        return list(ranked)[:limit]
     matches = [
         item
-        for item in standards
+        for item in ranked
         if query in " ".join(
             [item.issuer, item.family, item.code, item.version, item.title, item.citation]
         ).lower()
@@ -70,6 +66,7 @@ def _latest_by_family(tag: str, contract_date: date | None) -> list[Standard]:
 
 def suggest_standards(project: Project) -> list[SuggestedStandard]:
     picks: dict[str, SuggestedStandard] = {}
+    address = project.address.lower()
 
     def add_many(tag: str, rationale: str) -> None:
         for item in _latest_by_family(tag, project.contract_signed_on):
@@ -90,6 +87,14 @@ def suggest_standards(project: Project) -> list[SuggestedStandard]:
         )
         for tag in permit_tags:
             add_many(tag, rationale)
+    if ", ca" in address or " california" in address:
+        add_many(
+            "california",
+            (
+                "Suggested because the project address appears to be in California "
+                "and Title 24 likely applies."
+            ),
+        )
     if project.is_federal:
         add_many("federal", "Suggested because the project is federal.")
     if project.is_military:
@@ -103,7 +108,7 @@ def suggest_standards(project: Project) -> list[SuggestedStandard]:
 def compare_selection_to_suggestions(project: Project, selected_ids: set[str]) -> dict:
     suggestions = suggest_standards(project)
     suggested_ids = {item.standard_id for item in suggestions}
-    standards = {item.id: item for item in search_catalog(limit=500)}
+    standards = {item.id: item for item in search_catalog(limit=5000)}
     items = []
     for standard_id in sorted(suggested_ids | selected_ids):
         standard = standards.get(standard_id)

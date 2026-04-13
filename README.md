@@ -57,7 +57,14 @@ scripts/notarize_dmg.sh release/PlanReview.dmg
 
 ## Standards catalog
 
-The seeded catalog lives in `src/planreview/data/standards_seed.json`. Each entry includes:
+The seeded catalog is generated in [catalog_seed.py](/Users/InfrastructureDashboard/PlanReview/src/planreview/services/catalog_seed.py) and currently includes 143 versioned standards records, including expanded coverage for:
+
+- California Title 24 / CBSC parts and editions
+- ICC code families, including IBC and ICC A117.1
+- NFPA code families, including NFPA 70, 72, and 101
+- ADA standards and implementing regulations
+
+Each entry includes:
 
 - issuing body,
 - family,
