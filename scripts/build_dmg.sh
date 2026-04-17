@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 APP_PATH="${1:-$ROOT_DIR/release/app/PlanReview.app}"
 DMG_PATH="${2:-$ROOT_DIR/release/PlanReview.dmg}"
 VOL_NAME="PlanReview"
+IDENTITY="${PLANREVIEW_CODESIGN_IDENTITY:-}"
 
 if [[ ! -d "$APP_PATH" ]]; then
   echo "App not found at $APP_PATH" >&2
@@ -28,5 +29,9 @@ hdiutil create \
   -ov \
   -format UDZO \
   "$DMG_PATH"
+
+if [[ -n "$IDENTITY" ]]; then
+  codesign --force --sign "$IDENTITY" "$DMG_PATH"
+fi
 
 echo "Built DMG at $DMG_PATH"
