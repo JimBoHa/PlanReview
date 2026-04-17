@@ -21,3 +21,4 @@ PlanReview.spec
 *.log
 src/planreview/static/vendor/
 data/runtime/
+data/manufacturer-corpus/

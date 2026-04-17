@@ -55,19 +55,14 @@ def test_end_to_end_review_and_export(app_client, tmp_path: Path) -> None:
             )
         assert upload_response.status_code == 200
 
-    save_response = client.post(
-        f"/api/projects/{project_id}/standards",
-        json={
-            "items": [
-                {"standard_id": "nfpa70-2023", "source": "user", "user_state": "selected"},
-                {"standard_id": "ipc-2021", "source": "user", "user_state": "selected"},
-                {"standard_id": "faa-std-019f-chg3", "source": "user", "user_state": "selected"},
-                {"standard_id": "ibc-2021", "source": "user", "user_state": "selected"},
-                {"standard_id": "ada-2010", "source": "user", "user_state": "selected"},
-            ]
-        },
-    )
-    assert save_response.status_code == 200
+    automation_response = client.post(f"/api/projects/{project_id}/automation")
+    assert automation_response.status_code == 200
+    automation = automation_response.json()
+    assert any(item["id"] == "nfpa70-2020" for item in automation["standards"])
+    assert any(item["id"] == "ipc-2021" for item in automation["standards"])
+    assert any(item["id"] == "faa-std-019f-chg2" for item in automation["standards"])
+    assert any(item["id"] == "ibc-2018" for item in automation["standards"])
+    assert any(item["id"] == "ada-2010" for item in automation["standards"])
 
     review_response = client.post(f"/api/projects/{project_id}/review")
     assert review_response.status_code == 200
@@ -85,11 +80,9 @@ def test_end_to_end_review_and_export(app_client, tmp_path: Path) -> None:
     assert job_payload is not None
     assert job_payload["job"]["status"] == "completed"
     discrepancies = job_payload["discrepancies"]
-    assert len(discrepancies) >= 8
-    assert any("FAA-STD-019f, Chg 2" in item["description"] for item in discrepancies)
+    assert len(discrepancies) >= 6
     assert any("undersized" in item["description"] for item in discrepancies)
     assert any("minimum drainage slope" in item["citation"] for item in discrepancies)
-    assert any("IBC 2018" in item["description"] for item in discrepancies)
     assert any("32-inch minimum" in item["description"] for item in discrepancies)
     assert any("1:12 maximum" in item["description"] for item in discrepancies)
     assert any("44-inch minimum" in item["description"] for item in discrepancies)

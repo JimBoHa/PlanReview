@@ -1,0 +1,102 @@
+{
+  "documents": [
+    {
+      "manufacturer": "Hilti",
+      "component_label": "anchor",
+      "component_family": "fastener",
+      "title": "Hilti HSL-3 Heavy-duty Anchor Technical Data",
+      "url": "https://www.hilti.com/medias/sys_master/h7c/h06/9167662088222.pdf"
+    },
+    {
+      "manufacturer": "Carrier",
+      "component_label": "air-handler",
+      "component_family": "hvac-equipment",
+      "title": "Carrier CRS 50kW Air Handler Data Sheet",
+      "url": "https://brandportal.carrier.com/m/7522076711ee4628/original/CRS-50kW-Air-Handler_AHU-050-100.pdf"
+    },
+    {
+      "manufacturer": "Legrand",
+      "component_label": "occupancy-sensor",
+      "component_family": "electrical-device",
+      "title": "Legrand LMDC-100 Occupancy Sensor Cutsheet",
+      "url": "https://www.legrand.us/p/print/LMDC-100.pdf"
+    },
+    {
+      "manufacturer": "YORK",
+      "component_label": "rooftop-unit",
+      "component_family": "hvac-equipment",
+      "title": "YORK Variable Air Volume for Rooftop Units Application Guide",
+      "url": "https://www.york.com/-/media/project/jci-global/york-sites/united-states-york/insights/files/variable-air-volume-for-rooftop-units_application-guide.pdf"
+    },
+    {
+      "manufacturer": "Thermaflex",
+      "component_label": "insulated-duct",
+      "component_family": "hvac-distribution",
+      "title": "Thermaflex TQ-Air Technical Data Sheet",
+      "url": "https://thermaflex.com/wp-content/uploads/2022/07/TDS_TQ-Air_v2.0EU_20220202-1-2.pdf"
+    },
+    {
+      "manufacturer": "Siemens",
+      "component_label": "panelboard",
+      "component_family": "power-distribution",
+      "title": "Siemens P5 Power Panelboards Data Sheet",
+      "url": "https://cache.industry.siemens.com/dl/files/210/109995210/att_1343258/v1/SIE_DS_P5_Power_Panelboards.pdf?download=true"
+    },
+    {
+      "manufacturer": "ABB",
+      "component_label": "distribution-board",
+      "component_family": "power-distribution",
+      "title": "ABB Sub-distribution Boards Product Page",
+      "url": "https://new.abb.com/low-voltage/products/system-pro-e/Sub-distribution-boards"
+    },
+    {
+      "manufacturer": "Schneider Electric",
+      "component_label": "panelboard",
+      "component_family": "power-distribution",
+      "title": "Square D NF Circuit Breaker Panelboards Catalog",
+      "url": "https://download.schneider-electric.com/files?p_Doc_Ref=1670CT0701&p_enDocType=Catalog&p_File_Name=1670CT0701.pdf"
+    },
+    {
+      "manufacturer": "Square D",
+      "component_label": "switchboard",
+      "component_family": "power-distribution",
+      "title": "Square D QED-6 Switchboards Installation Guide",
+      "url": "https://download.schneider-electric.com/files?p_File_Name=80298-001-09_EN.pdf&p_Doc_Ref=80298-001&p_enDocType=User+guide"
+    },
+    {
+      "manufacturer": "Otis",
+      "component_label": "elevator",
+      "component_family": "vertical-transport",
+      "title": "Otis Gen2 Elevator Brochure",
+      "url": "https://assets.otiscreate.otis.com/iaastorage/ProductDirectory/Translation/Brochure/CL_161/P_77/Gen2%20Brochure.pdf"
+    },
+    {
+      "manufacturer": "Schindler",
+      "component_label": "escalator",
+      "component_family": "vertical-transport",
+      "title": "Schindler 9300 Escalator Brochure",
+      "url": "https://www.schindler.com/content/dam/website/us/docs/escalators/schindler-9300/schindler-9300-escalator-brochure.pdf/_jcr_content/renditions/original./schindler-9300-escalator-brochure.pdf"
+    },
+    {
+      "manufacturer": "KONE",
+      "component_label": "elevator",
+      "component_family": "vertical-transport",
+      "title": "KONE MiniSpace DX Brochure",
+      "url": "https://www.kone.us/Images/KONE-MiniSpace-DX-Brochure_tcm25-115422.pdf"
+    },
+    {
+      "manufacturer": "Simpson Strong-Tie",
+      "component_label": "structural-connector",
+      "component_family": "structural-hardware",
+      "title": "Simpson Strong-Tie Cold-Formed Steel Connectors Catalog",
+      "url": "https://ssttoolbox.widen.net/content/g859frdcld/original/C-CF-2026.pdf?t.download=true"
+    },
+    {
+      "manufacturer": "Simpson Door Company",
+      "component_label": "wood-door",
+      "component_family": "architectural-opening",
+      "title": "Simpson Full Lite Doors Product Data Sheet",
+      "url": "https://www.simpsondoor.com/literature/pdfs/Full-Lite-Doors.pdf"
+    }
+  ]
+}

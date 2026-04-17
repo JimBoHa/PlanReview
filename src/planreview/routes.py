@@ -17,10 +17,10 @@ from planreview.models import (
     UploadedDocument,
 )
 from planreview.schemas import ProjectCreate, StandardsSelection
+from planreview.services.automation import automate_project_baseline
 from planreview.services.catalog import (
     compare_selection_to_suggestions,
     search_catalog,
-    suggest_standards,
 )
 from planreview.services.documents import save_uploaded_document
 from planreview.services.export import export_project_outputs
@@ -96,12 +96,31 @@ def catalog_search(q: str = "", limit: int = 50) -> dict:
 
 @router.post("/api/projects/{project_id}/suggest-standards")
 def suggest_for_project(project_id: str) -> dict:
-    with session_scope() as session:
-        project = session.get(Project, project_id)
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
-    suggestions = suggest_standards(project)
-    return {"suggestions": [item.model_dump() for item in suggestions]}
+    try:
+        automation = automate_project_baseline(project_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Project not found") from None
+    return {
+        "suggestions": [
+            {"standard_id": item["id"], "rationale": item["source"]}
+            for item in automation.standards
+        ],
+        "authorities": automation.authorities,
+        "evidence": automation.evidence,
+    }
+
+
+@router.post("/api/projects/{project_id}/automation")
+def automation_preview(project_id: str) -> dict:
+    try:
+        automation = automate_project_baseline(project_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Project not found") from None
+    return {
+        "authorities": automation.authorities,
+        "standards": automation.standards,
+        "evidence": automation.evidence,
+    }
 
 
 @router.post("/api/projects/{project_id}/standards")

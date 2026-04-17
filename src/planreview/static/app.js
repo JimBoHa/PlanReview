@@ -1,46 +1,28 @@
 const state = {
   projectId: null,
-  selectedStandards: new Map(),
-  catalogResults: [],
+  automation: null,
   activeJob: null,
   discrepancies: [],
 };
 
 const byId = (id) => document.getElementById(id);
 
-const renderCatalog = () => {
-  byId("catalog-list").innerHTML = state.catalogResults.map((item) => `
-    <li>
-      <strong>${item.code} ${item.version}</strong>
-      <div>${item.title}</div>
-      <div class="catalog-meta">${item.issuer} · ${item.family} · ${item.citation}</div>
-      <button data-standard='${JSON.stringify(item)}'>Add</button>
-    </li>
+const renderAutomation = () => {
+  const container = byId("automation-summary");
+  if (!state.automation) {
+    container.innerHTML = "<div>No automated baseline has been generated yet.</div>";
+    return;
+  }
+  const standards = state.automation.standards.map((item) => `
+    <div><strong>${item.citation}</strong> · ${item.source}</div>
   `).join("");
-  byId("catalog-list").querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      const item = JSON.parse(button.dataset.standard);
-      state.selectedStandards.set(item.id, { ...item, source: "user", user_state: "selected" });
-      renderSelected();
-    });
-  });
-};
-
-const renderSelected = () => {
-  byId("selected-list").innerHTML = [...state.selectedStandards.values()].map((item) => `
-    <li>
-      <strong>${item.code} ${item.version}</strong>
-      <div>${item.title}</div>
-      <div class="catalog-meta">${item.source}</div>
-      <button class="secondary" data-remove="${item.id}">Remove</button>
-    </li>
-  `).join("");
-  byId("selected-list").querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.selectedStandards.delete(button.dataset.remove);
-      renderSelected();
-    });
-  });
+  const authorities = state.automation.authorities.map((item) => `<div>${item}</div>`).join("");
+  const evidence = state.automation.evidence.map((item) => `<div>${item}</div>`).join("");
+  container.innerHTML = `
+    <div><strong>Authorities</strong>${authorities}</div>
+    <div><strong>Standards</strong>${standards}</div>
+    <div><strong>Evidence</strong>${evidence || "<div>No explicit document citations were detected.</div>"}</div>
+  `;
 };
 
 const renderFindings = () => {
@@ -68,9 +50,6 @@ const loadProject = async () => {
   if (!state.projectId) return;
   const response = await fetch(`/api/projects/${state.projectId}`);
   const data = await response.json();
-  state.selectedStandards.clear();
-  data.selected_standards.forEach((item) => state.selectedStandards.set(item.id, item));
-  renderSelected();
   byId("documents-list").innerHTML = data.documents.map((item) => `
     <li>${item.kind} · ${item.original_name} · ${item.page_count} pages</li>
   `).join("");
@@ -88,7 +67,7 @@ const pollJob = async () => {
   const percent = job.total_pages ? Math.round((job.processed_pages / job.total_pages) * 100) : 0;
   const eta = job.eta_seconds == null ? "estimating..." : `${job.eta_seconds}s remaining`;
   byId("job-progress").value = percent;
-  byId("job-status").textContent = `${job.status} · ${job.processed_pages}/${job.total_pages} pages · ${job.findings_count} findings · ${eta}${job.error_message ? ` · ${job.error_message}` : ""}`;
+  byId("job-status").textContent = `${job.status} · ${job.phase} · ${job.processed_pages}/${job.total_pages} pages · ${job.findings_count} findings · ${eta}${job.error_message ? ` · ${job.error_message}` : ""}`;
   renderFindings();
   if (job.status === "running" || job.status === "pending") {
     setTimeout(pollJob, 1500);
@@ -99,10 +78,10 @@ byId("project-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
   const payload = Object.fromEntries(form.entries());
-  payload.is_federal = form.get("is_federal") === "on";
-  payload.is_military = form.get("is_military") === "on";
-  payload.is_faa = form.get("is_faa") === "on";
-  payload.requires_local_permit = form.get("requires_local_permit") === "on";
+  payload.is_federal = false;
+  payload.is_military = false;
+  payload.is_faa = false;
+  payload.requires_local_permit = true;
   if (!payload.contract_signed_on) payload.contract_signed_on = null;
   const response = await fetch("/api/projects", {
     method: "POST",
@@ -129,61 +108,24 @@ const uploadDocument = async (kind, inputId) => {
 byId("upload-drawings").addEventListener("click", () => uploadDocument("drawings", "drawings-file"));
 byId("upload-specs").addEventListener("click", () => uploadDocument("specs", "specs-file"));
 
-byId("catalog-search").addEventListener("input", async (event) => {
-  const q = event.target.value;
-  const response = await fetch(`/api/catalog/search?q=${encodeURIComponent(q)}`);
-  const data = await response.json();
-  state.catalogResults = data.items;
-  renderCatalog();
-});
-
-byId("suggest-standards").addEventListener("click", async () => {
+byId("analyze-project").addEventListener("click", async () => {
   if (!state.projectId) return;
-  const response = await fetch(`/api/projects/${state.projectId}/suggest-standards`, { method: "POST" });
+  const response = await fetch(`/api/projects/${state.projectId}/automation`, { method: "POST" });
   const data = await response.json();
-  data.suggestions.forEach((item) => {
-    const catalogItem = state.catalogResults.find((candidate) => candidate.id === item.standard_id);
-    if (catalogItem) {
-      state.selectedStandards.set(catalogItem.id, { ...catalogItem, source: "suggested", user_state: "selected" });
-    }
-  });
-  const searchResponse = await fetch("/api/catalog/search");
-  const searchData = await searchResponse.json();
-  searchData.items.forEach((item) => {
-    if (data.suggestions.some((suggestion) => suggestion.standard_id === item.id)) {
-      state.selectedStandards.set(item.id, { ...item, source: "suggested", user_state: "selected" });
-    }
-  });
-  renderSelected();
-});
-
-byId("save-standards").addEventListener("click", async () => {
-  if (!state.projectId) return;
-  await fetch(`/api/projects/${state.projectId}/standards`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      items: [...state.selectedStandards.values()].map((item) => ({
-        standard_id: item.id,
-        source: item.source || "user",
-        user_state: item.user_state || "selected",
-      })),
-    }),
-  });
-  await loadProject();
-});
-
-byId("show-diff").addEventListener("click", async () => {
-  if (!state.projectId) return;
-  const response = await fetch(`/api/projects/${state.projectId}/standards/diff`);
-  const data = await response.json();
-  byId("diff-list").innerHTML = data.items.map((item) => `
-    <div><strong>${item.status}</strong> · ${item.code} ${item.version} · ${item.reason}</div>
-  `).join("");
+  state.automation = data;
+  renderAutomation();
 });
 
 byId("start-review").addEventListener("click", async () => {
   if (!state.projectId) return;
+  if (!state.automation) {
+    await fetch(`/api/projects/${state.projectId}/automation`, { method: "POST" })
+      .then((response) => response.json())
+      .then((data) => {
+        state.automation = data;
+        renderAutomation();
+      });
+  }
   const response = await fetch(`/api/projects/${state.projectId}/review`, { method: "POST" });
   const data = await response.json();
   state.activeJob = data.job.id;
@@ -201,8 +143,4 @@ byId("build-exports").addEventListener("click", async () => {
 });
 
 byId("findings-search").addEventListener("input", renderFindings);
-
-fetch("/api/catalog/search").then((response) => response.json()).then((data) => {
-  state.catalogResults = data.items;
-  renderCatalog();
-});
+renderAutomation();

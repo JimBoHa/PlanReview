@@ -5,6 +5,13 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from planreview.models import Standard
+from planreview.services.document_analysis import (
+    DocumentSemantics,
+    DrawingIntelligence,
+    PageSemantics,
+    ProjectSemanticContext,
+)
+from planreview.services.graph import ProjectGraph
 
 
 @dataclass
@@ -220,12 +227,16 @@ def detect_corridor_width_issues(
     findings: list[FindingDraft] = []
     for line in text.splitlines():
         lowered = line.lower()
-        if "corridor" not in lowered and "hall" not in lowered:
+        if not re.search(r"\b(corridor|hall|hallway)\b", lowered):
+            continue
+        if "project" in lowered or "mullion" in lowered or "wall thickness" in lowered:
             continue
         width_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:in|inch|\")", line, re.I)
         if not width_match:
             continue
         width = float(width_match.group(1))
+        if width <= 4:
+            continue
         if width < 44:
             findings.append(
                 FindingDraft(
@@ -267,12 +278,229 @@ def detect_guard_height_issues(text: str, selected_standards: list[Standard]) ->
     return findings
 
 
+def detect_drawing_scale_presence_issues(
+    selected_standards: list[Standard],
+    intelligence: DrawingIntelligence | None,
+    document_kind: str,
+) -> list[FindingDraft]:
+    if document_kind != "drawings" or intelligence is None:
+        return []
+    tags = _selected_tags(selected_standards)
+    if "building" not in tags and "electrical" not in tags and "mechanical" not in tags:
+        return []
+    if not intelligence.page_has_vector_content:
+        return []
+    if intelligence.line_count < 25:
+        return []
+    if intelligence.scale_tokens:
+        return []
+    return [
+        FindingDraft(
+            citation="Drawing sheet conventions / scale callout review",
+            description=(
+                "Drawing sheet contains substantial vector geometry but no scale callout "
+                "was detected in the text or OCR layer. This sheet should be verified "
+                "for explicit scale notation."
+            ),
+            anchor="",
+        )
+    ]
+
+
+def detect_symbol_legend_issues(
+    selected_standards: list[Standard],
+    intelligence: DrawingIntelligence | None,
+    document_semantics: DocumentSemantics | None,
+    document_kind: str,
+) -> list[FindingDraft]:
+    if document_kind != "drawings" or intelligence is None:
+        return []
+    tags = _selected_tags(selected_standards)
+    if "building" not in tags and "electrical" not in tags and "fire" not in tags:
+        return []
+    if len(intelligence.symbol_labels) < 2:
+        return []
+    if document_semantics and document_semantics.legend_pages:
+        return []
+    if "legend" in " ".join(intelligence.symbol_labels):
+        return []
+    return [
+        FindingDraft(
+            citation="Drawing legend / symbol coordination review",
+            description=(
+                "The sheet appears to include multiple symbol-bearing keywords but no "
+                "legend reference was detected. Confirm the corresponding legend or "
+                "symbol schedule is included in the set."
+            ),
+            anchor="",
+        )
+    ]
+
+
+def detect_dimension_presence_issues(
+    selected_standards: list[Standard],
+    intelligence: DrawingIntelligence | None,
+    semantics: PageSemantics | None,
+    document_kind: str,
+) -> list[FindingDraft]:
+    if document_kind != "drawings" or intelligence is None:
+        return []
+    if semantics and semantics.page_class in {"cover", "legend", "abbreviations", "schedule"}:
+        return []
+    tags = _selected_tags(selected_standards)
+    if "building" not in tags and "electrical" not in tags and "plumbing" not in tags:
+        return []
+    if not intelligence.page_has_vector_content:
+        return []
+    if intelligence.line_count < 40 and intelligence.rectangle_count < 4:
+        return []
+    if intelligence.dimension_tokens:
+        return []
+    return [
+        FindingDraft(
+            citation="Drawing annotation / dimension coordination review",
+            description=(
+                "Drawing sheet contains diagrammatic geometry but no explicit dimensions "
+                "were detected in the text or OCR layer. Confirm key dimensions are "
+                "shown or referenced in the detail set."
+            ),
+            anchor="",
+        )
+    ]
+
+
+def detect_missing_sheet_identifier_issues(
+    selected_standards: list[Standard],
+    intelligence: DrawingIntelligence | None,
+    semantics: PageSemantics | None,
+    document_kind: str,
+) -> list[FindingDraft]:
+    if document_kind != "drawings" or intelligence is None or semantics is None:
+        return []
+    if semantics.page_class in {"cover", "legend", "abbreviations"}:
+        return []
+    if semantics.sheet_number:
+        return []
+    if not intelligence.page_has_vector_content or intelligence.line_count < 30:
+        return []
+    tags = _selected_tags(selected_standards)
+    if "building" not in tags and "electrical" not in tags and "mechanical" not in tags:
+        return []
+    return [
+        FindingDraft(
+            citation="Drawing sheet identification review",
+            description=(
+                "The sheet appears to contain substantive drawing geometry but no sheet "
+                "identifier was extracted from the title block or text layer. Confirm "
+                "the sheet number is present and legible."
+            ),
+            anchor=semantics.sheet_title or "",
+        )
+    ]
+
+
+def detect_unresolved_detail_reference_issues(
+    semantics: PageSemantics | None,
+    project_context: ProjectSemanticContext | None,
+    document_kind: str,
+) -> list[FindingDraft]:
+    if document_kind != "drawings" or semantics is None or project_context is None:
+        return []
+    findings: list[FindingDraft] = []
+    for detail_reference, target_sheet in zip(
+        semantics.detail_references,
+        semantics.referenced_sheets,
+        strict=False,
+    ):
+        if target_sheet in project_context.sheet_numbers:
+            continue
+        findings.append(
+            FindingDraft(
+                citation="Drawing callout coordination review",
+                description=(
+                    f"Detail reference {detail_reference} points to sheet {target_sheet}, "
+                    "but that sheet was not found in the uploaded set."
+                ),
+                anchor=detail_reference,
+            )
+        )
+    return findings
+
+
+def detect_missing_spec_reference_issues(
+    semantics: PageSemantics | None,
+    project_context: ProjectSemanticContext | None,
+    document_kind: str,
+) -> list[FindingDraft]:
+    if document_kind != "drawings" or semantics is None or project_context is None:
+        return []
+    findings: list[FindingDraft] = []
+    for section in semantics.spec_section_references:
+        if section in project_context.spec_sections:
+            continue
+        findings.append(
+            FindingDraft(
+                citation="Drawing-to-spec coordination review",
+                description=(
+                    f"Drawing references specification section {section}, but that section "
+                    "was not detected anywhere in the uploaded specification set."
+                ),
+                anchor=section,
+            )
+        )
+    return findings
+
+
+def detect_orphan_drawing_page_issues(
+    semantics: PageSemantics | None,
+    project_graph: ProjectGraph | None,
+    page_node_id: str,
+    document_kind: str,
+) -> list[FindingDraft]:
+    if document_kind != "drawings" or semantics is None or project_graph is None:
+        return []
+    if semantics.page_class in {"cover", "legend", "abbreviations", "schedule"}:
+        return []
+    if not any(node.kind == "spec-section" for node in project_graph.nodes.values()):
+        return []
+    outgoing = project_graph.outgoing(page_node_id)
+    if any(edge.relation in {"spec-reference", "semantic-spec-link"} for edge in outgoing):
+        return []
+    if (
+        not semantics.system_ids
+        and not semantics.symbol_ids
+        and not semantics.predicted_component_labels
+    ):
+        return []
+    return [
+        FindingDraft(
+            citation="Drawing-to-spec semantic coordination review",
+            description=(
+                "The drawing page contains domain symbols or system cues but could not be "
+                "linked to any uploaded specification section by explicit reference or "
+                "semantic similarity. Verify the applicable spec section is included and "
+                "properly referenced."
+            ),
+            anchor=semantics.sheet_number or semantics.sheet_title,
+        )
+    ]
+
+
 def run_rules(
     text: str,
     selected_standards: list[Standard],
     all_standards: list[Standard],
+    *,
+    intelligence: DrawingIntelligence | None = None,
+    semantics: PageSemantics | None = None,
+    document_semantics: DocumentSemantics | None = None,
+    project_context: ProjectSemanticContext | None = None,
+    project_graph: ProjectGraph | None = None,
+    page_node_id: str = "",
+    document_kind: str = "",
 ) -> list[FindingDraft]:
     findings: list[FindingDraft] = []
+    _ = document_semantics
     findings.extend(detect_version_mismatches(text, selected_standards, all_standards))
     findings.extend(detect_ampacity_issues(text, selected_standards))
     findings.extend(detect_slope_issues(text, selected_standards))
@@ -280,4 +508,40 @@ def run_rules(
     findings.extend(detect_ramp_slope_issues(text, selected_standards))
     findings.extend(detect_corridor_width_issues(text, selected_standards))
     findings.extend(detect_guard_height_issues(text, selected_standards))
+    findings.extend(
+        detect_missing_sheet_identifier_issues(
+            selected_standards,
+            intelligence,
+            semantics,
+            document_kind,
+        )
+    )
+    findings.extend(
+        detect_drawing_scale_presence_issues(selected_standards, intelligence, document_kind)
+    )
+    findings.extend(
+        detect_dimension_presence_issues(selected_standards, intelligence, semantics, document_kind)
+    )
+    findings.extend(
+        detect_symbol_legend_issues(
+            selected_standards,
+            intelligence,
+            document_semantics,
+            document_kind,
+        )
+    )
+    findings.extend(
+        detect_unresolved_detail_reference_issues(semantics, project_context, document_kind)
+    )
+    findings.extend(
+        detect_missing_spec_reference_issues(semantics, project_context, document_kind)
+    )
+    findings.extend(
+        detect_orphan_drawing_page_issues(
+            semantics,
+            project_graph,
+            page_node_id,
+            document_kind,
+        )
+    )
     return findings

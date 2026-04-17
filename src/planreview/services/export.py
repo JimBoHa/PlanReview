@@ -100,8 +100,6 @@ def export_project_outputs(project_id: str) -> dict[str, str]:
     outputs: dict[str, str] = {"excel": str(_build_excel(project_id, list(rows)))}
     for document in documents:
         relevant = [row for row in rows if row.document_id == document.id]
-        if not relevant:
-            continue
         output_name = f"PlanReview-{document.kind.value}-marked.pdf"
         path = export_dir / output_name
         _apply_markup(document.stored_path, path, relevant)

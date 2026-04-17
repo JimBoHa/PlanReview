@@ -12,8 +12,9 @@
         <p class="eyebrow">Local-first plan review</p>
         <h1>PlanReview</h1>
         <p class="lede">
-          Upload plans and specifications, select the governing standards, and run a local code
-          review that produces an Excel log plus marked-up PDFs.
+          Upload plans and specifications, then run an automated local review that infers
+          jurisdiction, standards, OCR text, and drawing intelligence before generating an Excel
+          log plus marked-up PDFs.
         </p>
       </section>
 
@@ -23,10 +24,6 @@
           <label>Project name <input name="name" required /></label>
           <label>Address <input name="address" required /></label>
           <label>Contract signed on <input name="contract_signed_on" type="date" /></label>
-          <label><input name="is_federal" type="checkbox" /> Federal project</label>
-          <label><input name="is_military" type="checkbox" /> Military project</label>
-          <label><input name="is_faa" type="checkbox" /> FAA project</label>
-          <label><input name="requires_local_permit" type="checkbox" checked /> Local permit required</label>
           <label class="wide">Notes <textarea name="notes" rows="3"></textarea></label>
           <button type="submit">Create project</button>
         </form>
@@ -48,30 +45,20 @@
 
       <section class="panel">
         <div class="section-head">
-          <h2>3. Standards baseline</h2>
-          <button id="suggest-standards">Suggest from project answers</button>
+          <h2>3. Automated baseline</h2>
+          <button id="analyze-project">Analyze uploads</button>
         </div>
-        <label>Search catalog <input id="catalog-search" placeholder="FAA-STD-019f, IBC 2021, NEC, UFC..." /></label>
-        <div class="catalog-layout">
-          <div>
-            <h3>Catalog</h3>
-            <ul id="catalog-list" class="catalog-list"></ul>
-          </div>
-          <div>
-            <h3>Selected</h3>
-            <ul id="selected-list" class="catalog-list"></ul>
-          </div>
-        </div>
-        <div class="section-head">
-          <button id="save-standards">Save standards</button>
-          <button id="show-diff">Compare with suggestions</button>
-        </div>
-        <div id="diff-list" class="diff-list"></div>
+        <p class="status">
+          The app will infer likely authorities having jurisdiction, detect cited standards from the
+          uploaded documents, run Apple Vision OCR when pages do not contain usable text, and scan
+          drawing geometry for scale calls, dimensions, and symbol-bearing sheets.
+        </p>
+        <div id="automation-summary" class="diff-list"></div>
       </section>
 
       <section class="panel">
         <div class="section-head">
-          <h2>4. Run review</h2>
+          <h2>4. Run automated review</h2>
           <button id="start-review">Start review</button>
         </div>
         <p id="job-status" class="status"></p>

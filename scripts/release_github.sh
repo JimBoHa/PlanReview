@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-TAG="${1:-v0.1.0}"
+TAG="${1:-v0.1.2}"
 DMG_PATH="${2:-$ROOT_DIR/release/PlanReview.dmg}"
 
 if [[ -z "${GH_TOKEN:-}" ]]; then

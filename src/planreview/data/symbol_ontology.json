@@ -1,0 +1,106 @@
+{
+  "symbols": [
+    {
+      "id": "electrical.panelboard",
+      "discipline": "electrical",
+      "category": "equipment",
+      "canonical_name": "panelboard",
+      "aliases": ["panel", "panelboard", "switchboard", "distribution panel"]
+    },
+    {
+      "id": "electrical.receptacle.gfci",
+      "discipline": "electrical",
+      "category": "device",
+      "canonical_name": "gfci receptacle",
+      "aliases": ["gfci", "gfi", "gfci receptacle", "ground fault receptacle"]
+    },
+    {
+      "id": "electrical.lighting.fixture",
+      "discipline": "electrical",
+      "category": "device",
+      "canonical_name": "lighting fixture",
+      "aliases": ["lighting", "light fixture", "luminaire", "light"]
+    },
+    {
+      "id": "electrical.fire_alarm.device",
+      "discipline": "fire-protection",
+      "category": "device",
+      "canonical_name": "fire alarm device",
+      "aliases": ["fire alarm", "horn strobe", "smoke detector", "pull station"]
+    },
+    {
+      "id": "architectural.accessibility",
+      "discipline": "architectural",
+      "category": "annotation",
+      "canonical_name": "accessibility element",
+      "aliases": ["accessible", "ada", "wheelchair", "clear width"]
+    },
+    {
+      "id": "architectural.egress.exit",
+      "discipline": "architectural",
+      "category": "life-safety",
+      "canonical_name": "exit sign",
+      "aliases": ["exit", "egress", "exit sign", "means of egress"]
+    },
+    {
+      "id": "architectural.vertical_transport.elevator",
+      "discipline": "architectural",
+      "category": "equipment",
+      "canonical_name": "elevator",
+      "aliases": ["elevator", "lift", "elev"]
+    },
+    {
+      "id": "fire-protection.sprinkler",
+      "discipline": "fire-protection",
+      "category": "device",
+      "canonical_name": "sprinkler",
+      "aliases": ["sprinkler", "sprinkler head", "sprinkler piping"]
+    },
+    {
+      "id": "general.orientation.north_arrow",
+      "discipline": "general",
+      "category": "orientation",
+      "canonical_name": "north arrow",
+      "aliases": ["north arrow"]
+    },
+    {
+      "id": "general.detail_reference",
+      "discipline": "general",
+      "category": "annotation",
+      "canonical_name": "detail reference",
+      "aliases": ["detail", "section", "callout", "keynote"]
+    }
+  ],
+  "systems": [
+    {
+      "id": "electrical.power",
+      "discipline": "electrical",
+      "aliases": ["panel", "switchboard", "receptacle", "conduit", "circuit", "feeder"]
+    },
+    {
+      "id": "electrical.lighting",
+      "discipline": "electrical",
+      "aliases": ["lighting", "luminaire", "fixture", "control", "occupancy sensor"]
+    },
+    {
+      "id": "fire-protection.alarm",
+      "discipline": "fire-protection",
+      "aliases": ["fire alarm", "horn strobe", "smoke detector", "pull station"]
+    },
+    {
+      "id": "fire-protection.suppression",
+      "discipline": "fire-protection",
+      "aliases": ["sprinkler", "standpipe", "hose valve", "fire pump"]
+    },
+    {
+      "id": "architectural.accessibility",
+      "discipline": "architectural",
+      "aliases": ["accessible", "ada", "clear width", "ramp", "guard", "corridor"]
+    },
+    {
+      "id": "plumbing.drainage",
+      "discipline": "plumbing",
+      "aliases": ["slope", "drain", "sanitary", "waste", "vent", "area drain"]
+    }
+  ]
+}
